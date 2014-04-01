@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!-- Copyright (c) 2010  Rally Software Development Corp.  All rights reserved -->
+<html>
+<head>
+    <title>Revision History</title>
+    <meta name="Name"    content="App Example: Get Revisions where Description was changed" />
+    <meta name="Version" content="2010.4" />
+    <meta name="Vendor"  content="Rally Lab, Nick M" />
+    <script type="text/javascript" src="https://rally1.rallydev.com/apps/1.30/sdk.js?showHeader=false"></script>
+    <script type="text/javascript">
+ 
+        function getStories() {
+            var rallyDataSource = new rally.sdk.data.RallyDataSource('12352608129', '12352608219',false, false);  //USE YOUR OIDs
+	    var howFarBack = rally.sdk.util.DateTime.add(new Date(), "week", -4);  //4 weeks back. Make sure to limit the query. RevisionHistory is expensive!
+	    var howFarBackISO = rally.sdk.util.DateTime.toIsoString(howFarBack);
+            function itemQuery() {
+                var queryObject = {
+                    key: 's',
+                    type: 'HierarchicalRequirement',
+                    fetch: 'Name,ObjectID,FormattedID,RevisionHistory,Revisions,RevisionDescription,CreationDate,LastUpdateDate,Description',
+		    query: '(LastUpdateDate > "' + howFarBackISO + '")'
+                };
+                rallyDataSource.findAll(queryObject, populateTable);
+            }
+ 
+            function populateTable(results) {
+                var tableDiv = document.getElementById('aDiv');
+		
+		var config = { columns:
+                                                [{key: 'RevisionDescription', header: 'Revision Description'},
+						 {key: 'CreationDate', header: 'Creation Date'},
+						 {key: 'FormattedIDLink', header: 'Formatted ID', width: 100},
+                                                 {key: 'Name'},] };
+						 
+                var table = new rally.sdk.ui.Table(config);
+		
+		for ( i=0 ; i<results.s.length ; i++ ) { 
+			for ( j=0 ; j<results.s[i].RevisionHistory.Revisions.length ; j++ ) {
+			console.log(results.s[i].RevisionHistory.Revisions.last);
+				if((((results.s[i].RevisionHistory.Revisions[j].Description.indexOf("DESCRIPTION changed")>=0) && (results.s[i].RevisionHistory.Revisions[j].CreationDate > "2014-04-01T19:00:00:00:000Z")) && (results.s[i].RevisionHistory.Revisions[j].CreationDate < "2014-04-01T19:16:00:00:000Z"))){
+					results.s[i].CreationDate = results.s[i].RevisionHistory.Revisions[j].CreationDate
+					results.s[i].RevisionDescription=results.s[i].RevisionHistory.Revisions[j].Description;
+					results.s[i].FormattedIDLink = new rally.sdk.ui.basic.Link({item:results.s[i], text: results.s[i].FormattedID});
+					table.addRow(results.s[i]);
+					
+				}
+			}
+		}
+		
+                table.display(tableDiv);
+ 
+            };
+            itemQuery();
+        }
+ 
+        rally.addOnLoad(getStories);
+    </script>
+</head>
+<body>
+   <div id="aDiv"></div>
+</body>
+</html>
